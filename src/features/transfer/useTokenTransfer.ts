@@ -9,7 +9,6 @@ import {
   getAccountAddressForChain,
   useAccounts,
   useActiveChains,
-  useTransactionFns,
 } from '@hyperlane-xyz/widgets';
 import { useCallback, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -21,6 +20,7 @@ import { useMultiProvider } from '../chains/hooks';
 import { getChainDisplayName } from '../chains/utils';
 import { AppState, useStore } from '../store';
 import { getTokenByIndex, useWarpCore } from '../tokens/hooks';
+import { useTransactionFns } from '../midl/useTransactionFns';
 import { TransferContext, TransferFormValues, TransferStatus } from './types';
 import { tryGetMsgIdFromTransferReceipt } from './utils';
 
