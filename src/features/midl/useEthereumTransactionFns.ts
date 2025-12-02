@@ -67,6 +67,8 @@ export function useEthereumTransactionFns(
 
         clearTxIntentions();
 
+        // TODO: once asset configs include rune/BTC metadata, extend this intention with
+        // deposit/withdraw instructions so Midl can move the underlying asset alongside the EVM tx.
         const intention = await addTxIntentionAsync({
           reset: true,
           intention: {
@@ -175,6 +177,8 @@ export function useEthereumTransactionFns(
           const wagmiTx = ethers5TxToWagmiTx(tx.transaction);
           if (!wagmiTx.to) throw new Error('No tx recipient address specified');
 
+          // TODO: Inject rune/BTC deposit or withdrawal metadata here once we know which
+          // asset is being bridged for each tx in the batch.
           const intention = await addTxIntentionAsync({
             reset: index === 0,
             intention: {
