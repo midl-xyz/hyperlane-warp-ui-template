@@ -159,10 +159,16 @@ async function executeTransfer({
     const hashes: string[] = [];
     let txReceipt: TypedTransactionReceipt | undefined = undefined;
 
-    if (txs.length > 1 && txs.every((tx) => tx.type === ProviderType.Starknet)) {
+    const isStarknetBatch = txs.length > 1 && txs.every((tx) => tx.type === ProviderType.Starknet);
+    const isEvmBatch = txs.length > 1 && txs.every((tx) => tx.type === ProviderType.EthersV5);
+
+    if (isStarknetBatch || isEvmBatch) {
+      const batchCategory = isStarknetBatch
+        ? WarpTxCategory.Transfer
+        : txs.at(-1)?.category || WarpTxCategory.Transfer;
       updateTransferStatus(
         transferIndex,
-        (transferStatus = txCategoryToStatuses[WarpTxCategory.Transfer][0]),
+        (transferStatus = txCategoryToStatuses[batchCategory][0]),
       );
       const { hash, confirm } = await sendMultiTransaction({
         txs,
@@ -171,11 +177,11 @@ async function executeTransfer({
       });
       updateTransferStatus(
         transferIndex,
-        (transferStatus = txCategoryToStatuses[WarpTxCategory.Transfer][1]),
+        (transferStatus = txCategoryToStatuses[batchCategory][1]),
       );
       txReceipt = await confirm();
-      const description = toTitleCase(WarpTxCategory.Transfer);
-      logger.debug(`${description} transaction confirmed, hash:`, hash);
+      const description = toTitleCase(batchCategory);
+      logger.debug(`${description} transaction(s) confirmed, hash:`, hash);
       toastTxSuccess(`${description} transaction sent!`, hash, origin);
 
       hashes.push(hash);

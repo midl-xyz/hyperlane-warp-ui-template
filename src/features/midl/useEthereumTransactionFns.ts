@@ -5,7 +5,12 @@ import {
   TypedTransactionReceipt,
   WarpTypedTransaction,
 } from '@hyperlane-xyz/sdk';
-import { ChainTransactionFns, ethers5TxToWagmiTx, useEthereumSwitchNetwork } from '@hyperlane-xyz/widgets';
+import {
+  ChainTransactionFns,
+  ethers5TxToWagmiTx,
+  useEthereumSwitchNetwork,
+} from '@hyperlane-xyz/widgets';
+import { TransactionIntention } from '@midl-xyz/midl-js-executor';
 import {
   useAddTxIntention,
   useClearTxIntentions,
@@ -13,9 +18,9 @@ import {
   useSendBTCTransactions,
   useSignIntention,
 } from '@midl-xyz/midl-js-executor-react';
-import { keccak256 } from 'viem';
-import { useCallback } from 'react';
 import { waitForTransactionReceipt } from '@wagmi/core';
+import { useCallback } from 'react';
+import { keccak256 } from 'viem';
 import { useConfig } from 'wagmi';
 
 import { logger } from '../../utils/logger';
@@ -47,15 +52,14 @@ export function useEthereumTransactionFns(
         reset();
         setStage('preparing');
 
-        if (tx.type !== ProviderType.EthersV5)
-          throw new Error(`Unsupported tx type: ${tx.type}`);
+        if (tx.type !== ProviderType.EthersV5) throw new Error(`Unsupported tx type: ${tx.type}`);
 
         if (activeChainName && activeChainName !== chainName) {
           await switchNetwork(chainName);
         }
 
-        const chainId = multiProvider.getChainMetadata(chainName)
-          .chainId as number;
+        const chainId = multiProvider.getChainMetadata(chainName).chainId as number;
+        logger.debug('Resolved chain metadata', { chainName, chainId });
 
         logger.debug(`Preparing Midl intention for chain ${chainName}`);
         const wagmiTx = ethers5TxToWagmiTx(tx.transaction);
@@ -70,11 +74,6 @@ export function useEthereumTransactionFns(
               to: wagmiTx.to,
               data: wagmiTx.data,
               value: wagmiTx.value ?? 0n,
-              gas: wagmiTx.gas,
-              gasPrice: wagmiTx.gasPrice,
-              maxFeePerGas: wagmiTx.maxFeePerGas,
-              maxPriorityFeePerGas: wagmiTx.maxPriorityFeePerGas,
-              nonce: wagmiTx.nonce,
               chainId,
             },
           },
@@ -147,17 +146,132 @@ export function useEthereumTransactionFns(
 
   const onMultiSendTx = useCallback(
     async ({
-      txs: _,
-      chainName: __,
-      activeChainName: ___,
+      txs,
+      chainName,
+      activeChainName,
     }: {
       txs: WarpTypedTransaction[];
       chainName: ChainName;
       activeChainName?: ChainName;
     }) => {
-      throw new Error('Multi Transactions not supported on EVM');
+      try {
+        if (!txs.length) throw new Error('No transactions to send');
+        reset();
+        setStage('preparing');
+
+        if (activeChainName && activeChainName !== chainName) {
+          await switchNetwork(chainName);
+        }
+
+        const chainId = multiProvider.getChainMetadata(chainName).chainId as number;
+        logger.debug('Resolved chain metadata for batch', { chainName, chainId });
+
+        logger.debug(`Preparing Midl batch intention for chain ${chainName}`);
+        clearTxIntentions();
+
+        const intentions: TransactionIntention[] = [];
+        for (const [index, tx] of txs.entries()) {
+          if (tx.type !== ProviderType.EthersV5) throw new Error(`Unsupported tx type: ${tx.type}`);
+          const wagmiTx = ethers5TxToWagmiTx(tx.transaction);
+          if (!wagmiTx.to) throw new Error('No tx recipient address specified');
+
+          const intention = await addTxIntentionAsync({
+            reset: index === 0,
+            intention: {
+              evmTransaction: {
+                to: wagmiTx.to,
+                data: wagmiTx.data,
+                value: wagmiTx.value ?? 0n,
+                gas: wagmiTx.gas,
+                gasPrice: wagmiTx.gasPrice,
+                maxFeePerGas: wagmiTx.maxFeePerGas,
+                maxPriorityFeePerGas: wagmiTx.maxPriorityFeePerGas,
+                nonce: wagmiTx.nonce,
+                chainId,
+              },
+            },
+          });
+          intentions.push(intention);
+        }
+
+        setStage('finalizing');
+        const btcTransaction = await finalizeBTCTransactionAsync();
+        const btcTxId = btcTransaction?.tx?.id;
+        const btcTxHex = btcTransaction?.tx?.hex;
+        if (!btcTxId || !btcTxHex) {
+          throw new Error('Unable to finalize BTC portion of transaction');
+        }
+
+        setStage('signing');
+        const signedTxs: `0x${string}`[] = [];
+        for (const intention of intentions) {
+          const signedTx = await signIntentionAsync({
+            intention,
+            txId: btcTxId,
+          });
+          signedTxs.push(signedTx);
+        }
+
+        setStage('publishing');
+        type SendBtcParams = Parameters<typeof sendBTCTransactionsAsync>[0];
+        await sendBTCTransactionsAsync({
+          serializedTransactions: signedTxs as SendBtcParams['serializedTransactions'],
+          btcTransaction: btcTxHex as SendBtcParams['btcTransaction'],
+        });
+
+        const hashes = signedTxs.map((signedTx) => keccak256(signedTx));
+        const hash = hashes.at(-1);
+        if (!hash) throw new Error('Failed to compute transaction hash');
+
+        setStage('waitingReceipt');
+
+        const confirm = async (): Promise<TypedTransactionReceipt> => {
+          try {
+            let lastReceipt: TypedTransactionReceipt['receipt'] | null = null;
+            for (const currentHash of hashes) {
+              const receipt = await waitForTransactionReceipt(config, {
+                chainId,
+                hash: currentHash,
+                confirmations: 1,
+              });
+              lastReceipt = {
+                ...receipt,
+                contractAddress: receipt.contractAddress || null,
+              };
+            }
+            if (!lastReceipt) throw new Error('Failed to fetch transaction receipt');
+            setStage('success');
+            return {
+              type: ProviderType.Viem,
+              receipt: lastReceipt,
+            };
+          } catch (err: any) {
+            setError(err?.message || 'Failed to confirm transaction');
+            setStage('error');
+            throw err;
+          }
+        };
+
+        return { hash, confirm };
+      } catch (error: any) {
+        setError(error?.message || 'Failed to send transaction');
+        setStage('error');
+        throw error;
+      }
     },
-    [],
+    [
+      reset,
+      setStage,
+      switchNetwork,
+      multiProvider,
+      clearTxIntentions,
+      addTxIntentionAsync,
+      finalizeBTCTransactionAsync,
+      signIntentionAsync,
+      sendBTCTransactionsAsync,
+      config,
+      setError,
+    ],
   );
 
   return {
