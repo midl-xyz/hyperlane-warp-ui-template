@@ -9,7 +9,6 @@ import {
   getAccountAddressForChain,
   useAccounts,
   useActiveChains,
-  useTransactionFns,
 } from '@hyperlane-xyz/widgets';
 import { useCallback, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -21,6 +20,7 @@ import { useMultiProvider } from '../chains/hooks';
 import { getChainDisplayName } from '../chains/utils';
 import { AppState, useStore } from '../store';
 import { getTokenByIndex, useWarpCore } from '../tokens/hooks';
+import { useTransactionFns } from '../midl/useTransactionFns';
 import { TransferContext, TransferFormValues, TransferStatus } from './types';
 import { tryGetMsgIdFromTransferReceipt } from './utils';
 
@@ -159,10 +159,16 @@ async function executeTransfer({
     const hashes: string[] = [];
     let txReceipt: TypedTransactionReceipt | undefined = undefined;
 
-    if (txs.length > 1 && txs.every((tx) => tx.type === ProviderType.Starknet)) {
+    const isStarknetBatch = txs.length > 1 && txs.every((tx) => tx.type === ProviderType.Starknet);
+    const isEvmBatch = txs.length > 1 && txs.every((tx) => tx.type === ProviderType.EthersV5);
+
+    if (isStarknetBatch || isEvmBatch) {
+      const batchCategory = isStarknetBatch
+        ? WarpTxCategory.Transfer
+        : txs.at(-1)?.category || WarpTxCategory.Transfer;
       updateTransferStatus(
         transferIndex,
-        (transferStatus = txCategoryToStatuses[WarpTxCategory.Transfer][0]),
+        (transferStatus = txCategoryToStatuses[batchCategory][0]),
       );
       const { hash, confirm } = await sendMultiTransaction({
         txs,
@@ -171,11 +177,11 @@ async function executeTransfer({
       });
       updateTransferStatus(
         transferIndex,
-        (transferStatus = txCategoryToStatuses[WarpTxCategory.Transfer][1]),
+        (transferStatus = txCategoryToStatuses[batchCategory][1]),
       );
       txReceipt = await confirm();
-      const description = toTitleCase(WarpTxCategory.Transfer);
-      logger.debug(`${description} transaction confirmed, hash:`, hash);
+      const description = toTitleCase(batchCategory);
+      logger.debug(`${description} transaction(s) confirmed, hash:`, hash);
       toastTxSuccess(`${description} transaction sent!`, hash, origin);
 
       hashes.push(hash);
