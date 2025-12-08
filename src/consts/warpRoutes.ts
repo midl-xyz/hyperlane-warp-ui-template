@@ -6,12 +6,12 @@ import { TokenStandard, WarpCoreConfig } from '@hyperlane-xyz/sdk';
 export const warpRouteConfigs: WarpCoreConfig = {
   tokens: [
     {
-      addressOrDenom: '0x3843f27f7c5d85536396fcca7c18d65fedf3299b',
+      addressOrDenom: '0x1de294fb90e715915a124fc2661d409619933472',
       chainName: 'sepolia',
       collateralAddressOrDenom: '0xe304977108b53cf121da98b7c74d512ba6b99962',
       connections: [
         {
-          token: 'ethereum|arbitrumsepolia|0x3843f27f7c5d85536396fcca7c18d65fedf3299b',
+          token: 'ethereum|arbitrumsepolia|0xa1715961bee24036f8f9dc88ad0df3e953637bc7',
         },
       ],
       decimals: 18,
@@ -20,11 +20,11 @@ export const warpRouteConfigs: WarpCoreConfig = {
       symbol: 'MTK',
     },
     {
-      addressOrDenom: '0x3843f27f7c5d85536396fcca7c18d65fedf3299b',
+      addressOrDenom: '0xa1715961bee24036f8f9dc88ad0df3e953637bc7',
       chainName: 'arbitrumsepolia',
       connections: [
         {
-          token: 'ethereum|sepolia|0x3843f27f7c5d85536396fcca7c18d65fedf3299b',
+          token: 'ethereum|sepolia|0x1de294fb90e715915a124fc2661d409619933472',
         },
       ],
       decimals: 18,
