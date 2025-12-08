@@ -1,4 +1,5 @@
 import { MempoolSpaceProvider, regtest, signet, testnet } from '@midl-xyz/midl-js-core';
+import { WagmiMidlProvider } from '@midl-xyz/midl-js-executor-react';
 import { MidlProvider } from '@midl-xyz/midl-js-react';
 import { createMidlConfig, SatoshiKitProvider } from '@midl-xyz/satoshi-kit';
 import '@midl-xyz/satoshi-kit/styles.css';
@@ -48,7 +49,9 @@ export function BitcoinWalletContext({ children }: PropsWithChildren<unknown>) {
 
   return (
     <MidlProvider config={config}>
-      <SatoshiKitProvider>{children}</SatoshiKitProvider>
+      <WagmiMidlProvider>
+        <SatoshiKitProvider>{children}</SatoshiKitProvider>
+      </WagmiMidlProvider>
     </MidlProvider>
   );
 }

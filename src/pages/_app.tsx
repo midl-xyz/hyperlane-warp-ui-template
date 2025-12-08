@@ -9,12 +9,13 @@ import { ErrorBoundary } from '../components/errors/ErrorBoundary';
 import { AppLayout } from '../components/layout/AppLayout';
 import { MAIN_FONT } from '../consts/app';
 import { WarpContextInitGate } from '../features/WarpContextInitGate';
+import { MidlTxProgressModal } from '../features/midl/MidlTxProgressModal';
 import { BitcoinWalletContext } from '../features/wallet/context/BitcoinWalletContext';
 import { CosmosWalletContext } from '../features/wallet/context/CosmosWalletContext';
-import { EvmWalletContext } from '../features/wallet/context/EvmWalletContext';
 import { RadixWalletContext } from '../features/wallet/context/RadixWalletContext';
 import { SolanaWalletContext } from '../features/wallet/context/SolanaWalletContext';
 import { StarknetWalletContext } from '../features/wallet/context/StarknetWalletContext';
+import { EvmWalletContext } from '../features/wallet/context/EvmWalletContext';
 import '../styles/globals.css';
 import '../vendor/inpage-metamask';
 import '../vendor/polyfill';
@@ -42,22 +43,24 @@ export default function App({ Component, pageProps }: AppProps) {
       <ErrorBoundary>
         <QueryClientProvider client={reactQueryClient}>
           <WarpContextInitGate>
-            <EvmWalletContext>
-              <SolanaWalletContext>
-                <CosmosWalletContext>
-                  <StarknetWalletContext>
-                    <RadixWalletContext>
-                      <BitcoinWalletContext>
+            <SolanaWalletContext>
+              <CosmosWalletContext>
+                <StarknetWalletContext>
+                  <RadixWalletContext>
+                    <BitcoinWalletContext>
+                      {/* Wrap EVM wallets inside the Bitcoin context so RainbowKit uses its own wagmi config */}
+                      <EvmWalletContext>
                         <AppLayout>
                           <Component {...pageProps} />
                           <Analytics />
+                          <MidlTxProgressModal />
                         </AppLayout>
-                      </BitcoinWalletContext>
-                    </RadixWalletContext>
-                  </StarknetWalletContext>
-                </CosmosWalletContext>
-              </SolanaWalletContext>
-            </EvmWalletContext>
+                      </EvmWalletContext>
+                    </BitcoinWalletContext>
+                  </RadixWalletContext>
+                </StarknetWalletContext>
+              </CosmosWalletContext>
+            </SolanaWalletContext>
           </WarpContextInitGate>
         </QueryClientProvider>
         <ToastContainer transition={Zoom} position="bottom-right" limit={2} />
