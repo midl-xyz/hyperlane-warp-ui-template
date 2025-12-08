@@ -15,6 +15,7 @@ import { CosmosWalletContext } from '../features/wallet/context/CosmosWalletCont
 import { RadixWalletContext } from '../features/wallet/context/RadixWalletContext';
 import { SolanaWalletContext } from '../features/wallet/context/SolanaWalletContext';
 import { StarknetWalletContext } from '../features/wallet/context/StarknetWalletContext';
+import { EvmWalletContext } from '../features/wallet/context/EvmWalletContext';
 import '../styles/globals.css';
 import '../vendor/inpage-metamask';
 import '../vendor/polyfill';
@@ -47,11 +48,14 @@ export default function App({ Component, pageProps }: AppProps) {
                 <StarknetWalletContext>
                   <RadixWalletContext>
                     <BitcoinWalletContext>
-                      <AppLayout>
-                        <Component {...pageProps} />
-                        <Analytics />
-                        <MidlTxProgressModal />
-                      </AppLayout>
+                      {/* Wrap EVM wallets inside the Bitcoin context so RainbowKit uses its own wagmi config */}
+                      <EvmWalletContext>
+                        <AppLayout>
+                          <Component {...pageProps} />
+                          <Analytics />
+                          <MidlTxProgressModal />
+                        </AppLayout>
+                      </EvmWalletContext>
                     </BitcoinWalletContext>
                   </RadixWalletContext>
                 </StarknetWalletContext>
