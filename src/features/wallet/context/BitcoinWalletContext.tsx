@@ -1,7 +1,7 @@
-import { MempoolSpaceProvider, regtest, signet, testnet } from '@midl-xyz/midl-js-core';
-import { MidlProvider } from '@midl-xyz/midl-js-react';
-import { createMidlConfig, SatoshiKitProvider } from '@midl-xyz/satoshi-kit';
-import '@midl-xyz/satoshi-kit/styles.css';
+import { MempoolSpaceProvider, regtest, signet, testnet } from '@midl/core';
+import { MidlProvider } from '@midl/react';
+import { createMidlConfig, SatoshiKitProvider } from '@midl/satoshi-kit';
+import '@midl/satoshi-kit/styles.css';
 import { PropsWithChildren, useMemo } from 'react';
 
 // Configure Bitcoin network based on environment

@@ -1,5 +1,5 @@
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
-import { ConnectButton } from '@midl-xyz/satoshi-kit';
+import { ConnectButton } from '@midl/satoshi-kit';
 import Image from 'next/image';
 import { useState } from 'react';
 import BtcIcon from './assets/btc.svg';

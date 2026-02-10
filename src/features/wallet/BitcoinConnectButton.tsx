@@ -1,5 +1,5 @@
-import { useAccounts, useBalance } from '@midl-xyz/midl-js-react';
-import { ConnectButton } from '@midl-xyz/satoshi-kit';
+import { useAccounts, useBalance } from '@midl/react';
+import { ConnectButton } from '@midl/satoshi-kit';
 import { useStore } from '../store';
 
 // Helper to shorten Bitcoin address

@@ -1,5 +1,5 @@
 import { ConnectWalletButton as ConnectWalletButtonInner } from '@hyperlane-xyz/widgets';
-import { useAccounts as useBtcAccounts, useBalance } from '@midl-xyz/midl-js-react';
+import { useAccounts as useBtcAccounts, useBalance } from '@midl/react';
 import { useMultiProvider } from '../chains/hooks';
 import { useStore } from '../store';
 
