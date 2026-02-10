@@ -130,6 +130,10 @@ const nextConfig = {
 
   reactStrictMode: true,
 
+  experimental: {
+    esmExternals: 'loose',
+  },
+
   // Skip linting and type checking during builds — CI runs these separately
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },

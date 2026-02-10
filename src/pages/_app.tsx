@@ -3,6 +3,7 @@ import '@hyperlane-xyz/widgets/styles.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Analytics } from '@vercel/analytics/react';
 import type { AppProps } from 'next/app';
+import { PropsWithChildren } from 'react';
 import { ToastContainer, Zoom } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ErrorBoundary } from '../components/errors/ErrorBoundary';
@@ -20,6 +21,8 @@ import '../styles/globals.css';
 import '../vendor/inpage-metamask';
 import '../vendor/polyfill';
 
+const onlyMidl = !!process?.env?.NEXT_PUBLIC_ONLY_MIDL;
+
 const reactQueryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -27,6 +30,26 @@ const reactQueryClient = new QueryClient({
     },
   },
 });
+
+// All wallet providers must remain in tree — useAccounts from @hyperlane-xyz/widgets
+// requires every protocol provider regardless of which chains are enabled.
+function WalletProviders({ children }: PropsWithChildren) {
+  return (
+    <EvmWalletContext>
+      <SolanaWalletContext>
+        <CosmosWalletContext>
+          <StarknetWalletContext>
+            <RadixWalletContext>
+              <AleoWalletContext>
+                <BitcoinWalletContext>{children}</BitcoinWalletContext>
+              </AleoWalletContext>
+            </RadixWalletContext>
+          </StarknetWalletContext>
+        </CosmosWalletContext>
+      </SolanaWalletContext>
+    </EvmWalletContext>
+  );
+}
 
 export default function App({ Component, pageProps }: AppProps) {
   // Disable app SSR for now as it's not needed and
@@ -43,24 +66,12 @@ export default function App({ Component, pageProps }: AppProps) {
       <ErrorBoundary>
         <QueryClientProvider client={reactQueryClient}>
           <WarpContextInitGate>
-            <EvmWalletContext>
-              <SolanaWalletContext>
-                <CosmosWalletContext>
-                  <StarknetWalletContext>
-                    <RadixWalletContext>
-                      <AleoWalletContext>
-                        <BitcoinWalletContext>
-                          <AppLayout>
-                            <Component {...pageProps} />
-                            <Analytics />
-                          </AppLayout>
-                        </BitcoinWalletContext>
-                      </AleoWalletContext>
-                    </RadixWalletContext>
-                  </StarknetWalletContext>
-                </CosmosWalletContext>
-              </SolanaWalletContext>
-            </EvmWalletContext>
+            <WalletProviders>
+              <AppLayout>
+                <Component {...pageProps} />
+                <Analytics />
+              </AppLayout>
+            </WalletProviders>
           </WarpContextInitGate>
         </QueryClientProvider>
         <ToastContainer transition={Zoom} position="bottom-right" limit={2} />

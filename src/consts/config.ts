@@ -8,6 +8,7 @@ const registryUrl = process?.env?.NEXT_PUBLIC_REGISTRY_URL || undefined;
 const registryBranch = process?.env?.NEXT_PUBLIC_REGISTRY_BRANCH || undefined;
 const registryProxyUrl = process?.env?.NEXT_PUBLIC_GITHUB_PROXY || 'https://proxy.hyperlane.xyz';
 const walletConnectProjectId = process?.env?.NEXT_PUBLIC_WALLET_CONNECT_ID || '';
+const onlyMidl = !!process?.env?.NEXT_PUBLIC_ONLY_MIDL;
 const transferBlacklist = process?.env?.NEXT_PUBLIC_TRANSFER_BLACKLIST || '';
 const chainWalletWhitelists = JSON.parse(process?.env?.NEXT_PUBLIC_CHAIN_WALLET_WHITELISTS || '{}');
 const rpcOverrides = process?.env?.NEXT_PUBLIC_RPC_OVERRIDES || '';
@@ -39,8 +40,8 @@ export const config: Config = Object.freeze({
   addressBlacklist: ADDRESS_BLACKLIST.map((address) => address.toLowerCase()),
   chainWalletWhitelists,
   enableExplorerLink: false,
-  defaultOriginChain: undefined,
-  defaultDestinationChain: undefined,
+  defaultOriginChain: onlyMidl ? 'ethereum' : undefined,
+  defaultDestinationChain: onlyMidl ? 'midl' : undefined,
   isDevMode,
   registryUrl,
   registryBranch,
@@ -52,14 +53,16 @@ export const config: Config = Object.freeze({
   version,
   transferBlacklist,
   walletConnectProjectId,
-  walletProtocols: [
-    ProtocolType.Ethereum,
-    ProtocolType.Sealevel,
-    ProtocolType.Cosmos,
-    ProtocolType.Starknet,
-    ProtocolType.Radix,
-    ProtocolType.Aleo,
-  ],
+  walletProtocols: onlyMidl
+    ? [ProtocolType.Ethereum]
+    : [
+        ProtocolType.Ethereum,
+        ProtocolType.Sealevel,
+        ProtocolType.Cosmos,
+        ProtocolType.Starknet,
+        ProtocolType.Radix,
+        ProtocolType.Aleo,
+      ],
   shouldDisableChains: false,
   rpcOverrides,
   enableTrackingEvents: false,

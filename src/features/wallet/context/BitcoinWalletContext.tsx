@@ -1,17 +1,22 @@
-import { MempoolSpaceProvider, regtest, signet, testnet } from '@midl/core';
+import { MaestroSymphonyProvider, MempoolSpaceProvider, mainnet, regtest, signet, testnet } from '@midl/core';
+import { WagmiAutoConnect } from '@midl/executor-react';
 import { MidlProvider } from '@midl/react';
-import { createMidlConfig, SatoshiKitProvider } from '@midl/satoshi-kit';
+import { SatoshiKitProvider, createMidlConfig } from '@midl/satoshi-kit';
 import '@midl/satoshi-kit/styles.css';
 import { PropsWithChildren, useMemo } from 'react';
 
-// Configure Bitcoin network based on environment
+const onlyMidl = !!process?.env?.NEXT_PUBLIC_ONLY_MIDL;
+
 function initBitcoinConfig() {
   const bitcoinNetwork = process.env.NEXT_PUBLIC_BITCOIN_NETWORK || 'regtest';
   const mempoolRpcUrl = process.env.NEXT_PUBLIC_MEMPOOL_RPC || undefined;
+  const runesUrl = process.env.NEXT_PUBLIC_RUNES_URL || undefined;
 
-  // Select the network
   let network;
   switch (bitcoinNetwork) {
+    case 'mainnet':
+      network = mainnet;
+      break;
     case 'testnet':
       network = testnet;
       break;
@@ -19,25 +24,25 @@ function initBitcoinConfig() {
       network = signet;
       break;
     case 'regtest':
-      network = regtest;
-      break;
-    case 'mainnet':
     default:
       network = regtest;
       break;
   }
 
-  // Configure provider
   const providerConfig = mempoolRpcUrl ? { [network.id]: mempoolRpcUrl } : undefined;
-
   const provider = providerConfig
     ? new MempoolSpaceProvider(providerConfig as any)
     : new MempoolSpaceProvider();
+
+  const runesProvider = runesUrl
+    ? new MaestroSymphonyProvider({ [network.id]: runesUrl } as any)
+    : undefined;
 
   const config = createMidlConfig({
     networks: [network],
     persist: true,
     provider,
+    ...(runesProvider && { runesProvider }),
   });
 
   return { config };
@@ -48,6 +53,7 @@ export function BitcoinWalletContext({ children }: PropsWithChildren<unknown>) {
 
   return (
     <MidlProvider config={config}>
+      {onlyMidl && <WagmiAutoConnect />}
       <SatoshiKitProvider>{children}</SatoshiKitProvider>
     </MidlProvider>
   );

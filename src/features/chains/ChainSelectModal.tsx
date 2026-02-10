@@ -1,7 +1,11 @@
-import { ChainMetadata } from '@hyperlane-xyz/sdk';
+import { ChainMap, ChainMetadata } from '@hyperlane-xyz/sdk';
 import { ChainSearchMenu, ChainSearchMenuProps, Modal } from '@hyperlane-xyz/widgets';
+import { useMemo } from 'react';
 import { config } from '../../consts/config';
 import { useStore } from '../store';
+
+const onlyMidl = !!process?.env?.NEXT_PUBLIC_ONLY_MIDL;
+const MIDL_ALLOWED_CHAINS = ['ethereum', 'midl'];
 
 export function ChainSelectListModal({
   isOpen,
@@ -22,6 +26,13 @@ export function ChainSelectListModal({
     setChainMetadataOverrides: s.setChainMetadataOverrides,
   }));
 
+  const filteredChainMetadata = useMemo(() => {
+    if (!onlyMidl) return chainMetadata;
+    return Object.fromEntries(
+      Object.entries(chainMetadata).filter(([name]) => MIDL_ALLOWED_CHAINS.includes(name)),
+    ) as ChainMap<ChainMetadata>;
+  }, [chainMetadata]);
+
   const onSelectChain = (chain: ChainMetadata) => {
     onSelect(chain.name);
     close();
@@ -30,7 +41,7 @@ export function ChainSelectListModal({
   return (
     <Modal isOpen={isOpen} close={close} panelClassname="bg-[#f8f8ff] p-4 sm:p-5 max-w-lg min-h-[40vh] rounded-3xl">
       <ChainSearchMenu
-        chainMetadata={chainMetadata}
+        chainMetadata={filteredChainMetadata}
         onClickChain={onSelectChain}
         overrideChainMetadata={chainMetadataOverrides}
         onChangeOverrideMetadata={setChainMetadataOverrides}

@@ -18,6 +18,11 @@ export enum TransferStatus {
   ConfirmedTransfer = 'confirmed-transfer',
   Delivered = 'delivered',
   Failed = 'failed',
+  // MIDL executor statuses
+  BuildingIntentions = 'building-intentions',
+  FinalizingBtcTx = 'finalizing-btc-tx',
+  SigningBtcTx = 'signing-btc-tx',
+  BroadcastingTx = 'broadcasting-tx',
 }
 
 export const SentTransferStatuses = [TransferStatus.ConfirmedTransfer, TransferStatus.Delivered];

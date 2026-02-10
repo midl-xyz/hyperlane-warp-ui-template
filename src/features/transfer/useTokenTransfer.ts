@@ -263,6 +263,10 @@ const errorMessages: Partial<Record<TransferStatus, string>> = {
   [TransferStatus.ConfirmingApprove]: 'Error while confirming the approve transaction.',
   [TransferStatus.SigningTransfer]: 'Error while signing the transfer transaction.',
   [TransferStatus.ConfirmingTransfer]: 'Error while confirming the transfer transaction.',
+  [TransferStatus.BuildingIntentions]: 'Error building MIDL intentions.',
+  [TransferStatus.FinalizingBtcTx]: 'Error preparing Bitcoin transaction.',
+  [TransferStatus.SigningBtcTx]: 'Error signing with Bitcoin wallet.',
+  [TransferStatus.BroadcastingTx]: 'Error broadcasting transaction.',
 };
 
 const txCategoryToStatuses: Record<WarpTxCategory, [TransferStatus, TransferStatus]> = {

@@ -68,6 +68,49 @@ Environment variables (see `.env.example`):
 - `NEXT_PUBLIC_REGISTRY_URL` - **Optional** custom Hyperlane registry URL
 - `NEXT_PUBLIC_RPC_OVERRIDES` - **Optional** JSON map of chain RPC overrides
 
+## MIDL Integration (ONLY_MIDL Mode)
+
+When `NEXT_PUBLIC_ONLY_MIDL=true`, the app restricts to Ethereum + MIDL (Bitcoin) chains.
+
+### Key Conditional Files
+- `src/consts/chains.ts` — exports midlChains (only MIDL EVM) vs svmChains
+- `src/consts/config.ts` — defaultOriginChain/defaultDestinationChain, walletProtocols
+- `src/consts/warpRouteWhitelist.ts` — restricts to USDC routes
+- `src/features/chains/ChainSelectModal.tsx` — filters chain list to ['ethereum', 'midl']
+- `src/features/wallet/context/BitcoinWalletContext.tsx` — renders `<WagmiAutoConnect />` from @midl/executor-react
+
+### WagmiAutoConnect (NOT WagmiMidlProvider)
+**CRITICAL**: Do NOT use `WagmiMidlProvider` as a wrapper. It creates its own internal `WagmiProvider` which conflicts with Hyperlane's `EvmWalletContext` WagmiProvider → infinite render loop.
+Instead use `WagmiAutoConnect` (exported separately from `@midl/executor-react`). It uses the existing WagmiProvider from EvmWalletContext. The MIDL chain is already in wagmi config via multiProvider → chains.ts.
+
+### All Wallet Providers Required
+`_app.tsx` must keep ALL wallet providers (Evm, Solana, Cosmos, Starknet, Radix, Aleo, Bitcoin) regardless of ONLY_MIDL. The `useAccounts` hook from `@hyperlane-xyz/widgets` requires every protocol provider present.
+
+### Warp Route Config Pipeline
+Precedence (lowest → highest): registry → warpRoutes.yaml → warpRoutes.ts → store overrides.
+Chain metadata: registry → chains.yaml → chains.ts → store → RPC env overrides.
+Local configs OVERRIDE registry. Define custom warp routes in `warpRoutes.ts`.
+
+### Custom Warp Route Definition
+```typescript
+// src/consts/warpRoutes.ts
+export const warpRouteConfigs: WarpCoreConfig = {
+  tokens: [{
+    chainName: 'midl',
+    standard: TokenStandard.EvmHypCollateral,  // collateral locked on MIDL
+    addressOrDenom: '0x...',  // warp route contract on MIDL EVM
+    decimals: 18, symbol: 'USDC', name: 'USD Coin',
+    connections: [{ token: 'ethereum|0x...' }],  // format: chainName|address
+  }, {
+    chainName: 'ethereum',
+    standard: TokenStandard.EvmHypSynthetic,  // synthetic minted on ETH
+    addressOrDenom: '0x...',  // warp route contract on Ethereum
+    decimals: 18, symbol: 'USDC', name: 'USD Coin',
+    connections: [{ token: 'midl|0x...' }],
+  }],
+};
+```
+
 ## Customization
 
 See `CUSTOMIZE.md` for detailed customization instructions:

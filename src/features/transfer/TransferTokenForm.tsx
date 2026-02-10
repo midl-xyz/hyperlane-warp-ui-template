@@ -70,6 +70,7 @@ import { TransferFormValues } from './types';
 import { useRecipientBalanceWatcher } from './useBalanceWatcher';
 import { useFeeQuotes } from './useFeeQuotes';
 import { useTokenTransfer } from './useTokenTransfer';
+import { useTokenTransferMidl } from './useTokenTransferMidl';
 import { isSmartContract } from './utils';
 
 export function TransferTokenForm() {
@@ -482,7 +483,8 @@ function ButtonSection({
     cleanOverrideToken();
     // resetForm();
   };
-  const { triggerTransactions } = useTokenTransfer(onDoneTransactions);
+  const { triggerTransactions: triggerHyperlane } = useTokenTransfer(onDoneTransactions);
+  const { triggerTransactions: triggerMidl } = useTokenTransferMidl(onDoneTransactions);
 
   const triggerTransactionsHandler = async () => {
     if (isSanctioned) {
@@ -497,7 +499,13 @@ function ButtonSection({
       tokenIndex = getIndexForToken(warpCore, routeOverrideToken);
       origin = routeOverrideToken.chainName;
     }
-    await triggerTransactions({ ...values, tokenIndex, origin });
+
+    const isMidlOrigin = origin === 'midl';
+    if (isMidlOrigin) {
+      await triggerMidl({ ...values, tokenIndex, origin });
+    } else {
+      await triggerHyperlane({ ...values, tokenIndex, origin });
+    }
   };
 
   const onEdit = () => {
