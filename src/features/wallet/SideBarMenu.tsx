@@ -5,7 +5,7 @@ import {
   useDisconnectFns,
   useWalletDetails,
 } from '@hyperlane-xyz/widgets';
-import { useAccounts as useBtcAccounts, useDisconnect } from '@midl-xyz/midl-js-react';
+import { useAccounts as useBtcAccounts, useDisconnect } from '@midl/react';
 import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';

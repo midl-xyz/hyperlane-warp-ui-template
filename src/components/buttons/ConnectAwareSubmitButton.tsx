@@ -1,5 +1,5 @@
 import { useAccountForChain, useTimeout } from '@hyperlane-xyz/widgets';
-import { useAccounts as useBtcAccounts } from '@midl-xyz/midl-js-react';
+import { useAccounts as useBtcAccounts } from '@midl/react';
 import { useFormikContext } from 'formik';
 import { useCallback } from 'react';
 import { useMultiProvider } from '../../features/chains/hooks';
